@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="text-lascohet-green mb-4"><i class="fas fa-users"></i> Manage Users</h3>
+
+    <div class="row g-4">
+        <!-- Create User Form -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-lascohet-green text-white">
+                    <i class="fas fa-user-plus"></i> Create New User
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.create_user') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Full Name</label>
+                            <input type="text" name="full_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Password</label>
+                            <input type="password" name="password" class="form-control" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Role</label>
+                            <select name="role" class="form-select" id="roleSelect" onchange="toggleStudentFields()">
+                                <option value="student">Student</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="hod">HOD</option>
+                                <option value="exam_officer">Exam Officer</option>
+                                <option value="registry">Registry</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Department</label>
+                            <select name="department_id" class="form-select">
+                                <option value="">-- Select --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Student-specific fields -->
+                        <div id="studentFields">
+                            <hr>
+                            <p class="small text-muted fw-bold">Student Details</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Matric Number</label>
+                                <input type="text" name="matric_number" class="form-control" placeholder="e.g. LCH/2025/001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Program</label>
+                                <select name="program_id" class="form-select">
+                                    <option value="">-- Select --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Level</label>
+                                <select name="level" class="form-select">
+                                    <option value="100">100 Level</option>
+                                    <option value="200">200 Level</option>
+                                    <option value="300">300 Level</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Admission Year</label>
+                                <input type="number" name="admission_year" class="form-control" value="2025">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-lascohet-green w-100">
+                            <i class="fas fa-save"></i> Create User
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="fas fa-list"></i> All Users ({{ users|length }})</span>
+                    <input type="text" id="userSearch" class="form-control form-control-sm w-auto"
+                           placeholder="Search users..." onkeyup="filterTable('userSearch', 'usersTable')">
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="usersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.full_name }}</td>
+                                    <td><code>{{ user.username }}</code></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if user.role == 'admin' else 'primary' if user.role == 'lecturer' else 'info' if user.role in ('hod','exam_officer') else 'warning' if user.role == 'registry' else 'secondary' }}">
+                                            {{ user.role|upper }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user.department.name if user.department else '-' }}</td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user', user_id=user.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-{{ 'danger' if user.is_active else 'success' }}"
+                                                    title="{{ 'Deactivate' if user.is_active else 'Activate' }}">
+                                                <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function toggleStudentFields() {
+    const role = document.getElementById('roleSelect').value;
+    document.getElementById('studentFields').style.display = role === 'student' ? 'block' : 'none';
+}
+toggleStudentFields();
+</script>
+{% endblock %}
+{% endblock %}

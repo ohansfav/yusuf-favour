@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Results - {{ semester }} {{ session }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('student.dashboard') }}">My Results</a></li>
+            <li class="breadcrumb-item active">{{ semester }} Semester - {{ session }}</li>
+        </ol>
+    </nav>
+
+    {% if profile %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-lascohet-green text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{{ semester }} Semester Results - {{ session }}</h5>
+                    <small>{{ profile.matric_number }} | {{ profile.program.name if profile.program else '' }}</small>
+                </div>
+                {% if gpa_record %}
+                <div class="text-end">
+                    <h4 class="mb-0 text-gold">GPA: {{ '%.2f'|format(gpa_record.gpa) }}</h4>
+                    <span class="badge bg-{{ 'success' if gpa_record.academic_standing == 'Distinction' else 'primary' if gpa_record.academic_standing == 'Upper Credit' else 'info' if gpa_record.academic_standing == 'Lower Credit' else 'warning text-dark' if gpa_record.academic_standing == 'Pass' else 'danger' }}">
+                        {{ gpa_record.academic_standing }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Code</th>
+                            <th>Course Title</th>
+                            <th>Credits</th>
+                            <th>CA (40)</th>
+                            <th>Exam (60)</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                            <th>Points</th>
+                            <th>Weighted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set ns = namespace(total_credits=0, total_weighted=0) %}
+                        {% for result, course, batch in results %}
+                        {% set ns.total_credits = ns.total_credits + course.credit_units %}
+                        {% set ns.total_weighted = ns.total_weighted + (result.grade_point * course.credit_units) %}
+                        <tr class="{{ 'table-danger' if result.grade == 'F' else '' }}">
+                            <td><span class="badge bg-secondary">{{ course.code }}</span></td>
+                            <td>{{ course.title }}</td>
+                            <td>{{ course.credit_units }}</td>
+                            <td>{{ result.ca_score }}</td>
+                            <td>{{ result.exam_score }}</td>
+                            <td><strong>{{ result.total_score }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if result.grade in ('A', 'AB') else 'primary' if result.grade in ('B', 'BC') else 'warning text-dark' if result.grade in ('C', 'CD') else 'secondary' if result.grade == 'D' else 'danger' }}">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                            <td>{{ result.grade_point }}</td>
+                            <td>{{ '%.1f'|format(result.grade_point * course.credit_units) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr class="fw-bold">
+                            <td colspan="2">Total</td>
+                            <td>{{ ns.total_credits }}</td>
+                            <td colspan="5"></td>
+                            <td>{{ '%.1f'|format(ns.total_weighted) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">Student profile not found.</div>
+    {% endif %}
+</div>
+{% endblock %}

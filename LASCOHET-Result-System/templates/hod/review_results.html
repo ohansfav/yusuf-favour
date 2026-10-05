@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Review Results - {{ batch.course.code }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('hod.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Review Results</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-lascohet-green text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{{ batch.course.code }} - {{ batch.course.title }}</h5>
+                    <small>{{ batch.academic_session }} | {{ batch.semester }} Semester | Uploaded by: {{ batch.lecturer.full_name }}</small>
+                </div>
+                <span class="badge bg-info fs-6">{{ batch.results.count() }} Students</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Matric No.</th>
+                            <th>Student Name</th>
+                            <th>CA (40)</th>
+                            <th>Exam (60)</th>
+                            <th>Total (100)</th>
+                            <th>Grade</th>
+                            <th>Grade Point</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="{{ 'table-danger' if result.grade == 'F' else '' }}">
+                            <td>{{ loop.index }}</td>
+                            <td><code>{{ result.student_profile.matric_number }}</code></td>
+                            <td>{{ result.student_profile.user.full_name }}</td>
+                            <td>{{ result.ca_score }}</td>
+                            <td>{{ result.exam_score }}</td>
+                            <td><strong>{{ result.total_score }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if result.grade in ('A', 'AB') else 'primary' if result.grade in ('B', 'BC') else 'warning text-dark' if result.grade in ('C', 'CD') else 'secondary' if result.grade == 'D' else 'danger' }}">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                            <td>{{ result.grade_point }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if batch.status == 'SUBMITTED' %}
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-start">
+                <!-- Reject Form -->
+                <form method="POST" action="{{ url_for('hod.reject_batch', batch_id=batch.id) }}" class="flex-grow-1 me-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="input-group">
+                        <input type="text" name="rejection_reason" class="form-control"
+                               placeholder="Reason for rejection (required to reject)">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Reject these results?')">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Approve Form -->
+                <form method="POST" action="{{ url_for('hod.approve_batch', batch_id=batch.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Approve and forward to Registry?')">
+                        <i class="fas fa-check-double"></i> Approve & Forward
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Manage Courses{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="text-lascohet-green mb-4"><i class="fas fa-book"></i> Manage Courses</h3>
+
+    <div class="row g-4">
+        <!-- Create Course -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-lascohet-green text-white">
+                    <i class="fas fa-plus"></i> New Course
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.create_course') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Course Code</label>
+                            <input type="text" name="code" class="form-control" placeholder="e.g. CHT101" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Course Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Introduction to Community Health" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Credit Units</label>
+                            <input type="number" name="credit_units" class="form-control" value="2" min="1" max="6" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Semester</label>
+                            <select name="semester" class="form-select">
+                                <option value="First">First Semester</option>
+                                <option value="Second">Second Semester</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level</label>
+                            <select name="level" class="form-select">
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Program</label>
+                            <select name="program_id" class="form-select" required>
+                                <option value="">-- Select --</option>
+                                {% for prog in programs %}
+                                <option value="{{ prog.id }}">{{ prog.name }} ({{ prog.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Assigned Lecturer</label>
+                            <select name="lecturer_id" class="form-select">
+                                <option value="">-- Not Assigned --</option>
+                                {% for lec in lecturers %}
+                                <option value="{{ lec.id }}">{{ lec.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-lascohet-green w-100">
+                            <i class="fas fa-save"></i> Create Course
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses List -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="fas fa-list"></i> All Courses ({{ courses|length }})</span>
+                    <input type="text" id="courseSearch" class="form-control form-control-sm w-auto"
+                           placeholder="Search courses..." onkeyup="filterTable('courseSearch', 'coursesTable')">
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="coursesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Title</th>
+                                    <th>Credits</th>
+                                    <th>Level</th>
+                                    <th>Semester</th>
+                                    <th>Program</th>
+                                    <th>Lecturer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                <tr>
+                                    <td><span class="badge bg-lascohet-green">{{ course.code }}</span></td>
+                                    <td>{{ course.title }}</td>
+                                    <td>{{ course.credit_units }}</td>
+                                    <td>{{ course.level }}</td>
+                                    <td>{{ course.semester }}</td>
+                                    <td>{{ course.program.name if course.program else '-' }}</td>
+                                    <td>{{ course.lecturer.full_name if course.lecturer else 'Unassigned' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7" class="text-center text-muted">No courses created yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

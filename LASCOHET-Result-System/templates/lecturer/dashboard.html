@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Lecturer Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-lascohet-green"><i class="fas fa-chalkboard-teacher"></i> Lecturer Dashboard</h3>
+        <span class="badge bg-primary fs-6">{{ current_user.full_name }}</span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Assigned Courses -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-lascohet-green text-white">
+                    <i class="fas fa-book"></i> My Courses
+                </div>
+                <div class="card-body">
+                    {% if courses %}
+                    <div class="list-group list-group-flush">
+                        {% for course in courses %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ course.code }}</strong> - {{ course.title }}
+                                <br><small class="text-muted">{{ course.program.name if course.program else '' }} | Level {{ course.level }} | {{ course.semester }} Semester | {{ course.credit_units }} CU</small>
+                            </div>
+                            <a href="{{ url_for('lecturer.upload_marks', course_id=course.id) }}" class="btn btn-sm btn-lascohet-green">
+                                <i class="fas fa-upload"></i> Upload
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">
+                        <i class="fas fa-info-circle"></i> No courses assigned to you yet.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Batches -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <span class="fw-bold"><i class="fas fa-file-alt"></i> My Result Batches</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Session</th>
+                                    <th>Semester</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for batch in batches %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ batch.course.code }}</span> {{ batch.course.title }}</td>
+                                    <td>{{ batch.academic_session }}</td>
+                                    <td>{{ batch.semester }}</td>
+                                    <td>
+                                        {% if batch.status == 'DRAFT' %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% elif batch.status == 'SUBMITTED' %}
+                                        <span class="badge bg-info">Submitted</span>
+                                        {% elif batch.status == 'HOD_APPROVED' %}
+                                        <span class="badge bg-primary">HOD Approved</span>
+                                        {% elif batch.status == 'REGISTRY_APPROVED' %}
+                                        <span class="badge bg-success">Published</span>
+                                        {% elif batch.status == 'REJECTED' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('lecturer.view_batch', batch_id=batch.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if batch.status == 'DRAFT' %}
+                                        <form method="POST" action="{{ url_for('lecturer.submit_batch', batch_id=batch.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Submit results for HOD approval?')">
+                                                <i class="fas fa-paper-plane"></i> Submit
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if batch.status == 'REJECTED' and batch.rejection_reason %}
+                                <tr>
+                                    <td colspan="5">
+                                        <small class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <strong>Rejection Reason:</strong> {{ batch.rejection_reason }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% else %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No result batches yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Guide -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body">
+            <h6 class="text-lascohet-green"><i class="fas fa-route"></i> Approval Workflow</h6>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge bg-secondary p-2">1. Draft</span>
+                <i class="fas fa-arrow-right text-muted"></i>
+                <span class="badge bg-info p-2">2. Submitted</span>
+                <i class="fas fa-arrow-right text-muted"></i>
+                <span class="badge bg-primary p-2">3. HOD Approved</span>
+                <i class="fas fa-arrow-right text-muted"></i>
+                <span class="badge bg-success p-2">4. Published</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}My Results{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-lascohet-green"><i class="fas fa-user-graduate"></i> My Results</h3>
+        {% if profile %}
+        <div class="text-end">
+            <span class="badge bg-lascohet-green fs-6">{{ profile.matric_number }}</span>
+            <br><small class="text-muted">{{ profile.program.name if profile.program else '' }} | Level {{ profile.level }}</small>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not profile %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        Your student profile is not set up. Please contact the administrator.
+    </div>
+    {% else %}
+
+    <!-- CGPA Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Cumulative GPA</h6>
+                    <h1 class="display-4 fw-bold text-lascohet-green">{{ '%.2f'|format(cgpa) }}</h1>
+                    <span class="badge bg-{{ 'success' if standing == 'Distinction' else 'primary' if standing == 'Upper Credit' else 'info' if standing == 'Lower Credit' else 'warning text-dark' if standing == 'Pass' else 'danger' }} fs-6">
+                        {{ standing }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-lascohet-green text-white">
+                    <i class="fas fa-chart-bar"></i> Semester GPA Summary
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Session</th>
+                                    <th>Semester</th>
+                                    <th>GPA</th>
+                                    <th>Credits</th>
+                                    <th>Standing</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gpa in semester_gpas %}
+                                <tr>
+                                    <td>{{ gpa.academic_session }}</td>
+                                    <td>{{ gpa.semester }}</td>
+                                    <td><strong>{{ '%.2f'|format(gpa.gpa) }}</strong></td>
+                                    <td>{{ gpa.total_credits }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if gpa.academic_standing == 'Distinction' else 'primary' if gpa.academic_standing == 'Upper Credit' else 'info' if gpa.academic_standing == 'Lower Credit' else 'warning text-dark' if gpa.academic_standing == 'Pass' else 'danger' }}">
+                                            {{ gpa.academic_standing }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('student.semester_results', semester=gpa.semester, session=gpa.academic_session) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="6" class="text-center text-muted">No published results yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Results -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+            <span class="fw-bold"><i class="fas fa-list"></i> All Published Results</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Code</th>
+                            <th>Course Title</th>
+                            <th>Credits</th>
+                            <th>Session</th>
+                            <th>Semester</th>
+                            <th>CA</th>
+                            <th>Exam</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result, course, batch in results %}
+                        <tr class="{{ 'table-danger' if result.grade == 'F' else '' }}">
+                            <td><span class="badge bg-secondary">{{ course.code }}</span></td>
+                            <td>{{ course.title }}</td>
+                            <td>{{ course.credit_units }}</td>
+                            <td>{{ batch.academic_session }}</td>
+                            <td>{{ batch.semester }}</td>
+                            <td>{{ result.ca_score }}</td>
+                            <td>{{ result.exam_score }}</td>
+                            <td><strong>{{ result.total_score }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if result.grade in ('A', 'AB') else 'primary' if result.grade in ('B', 'BC') else 'warning text-dark' if result.grade in ('C', 'CD') else 'secondary' if result.grade == 'D' else 'danger' }}">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                            <td>{{ result.grade_point }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="10" class="text-center text-muted py-4">
+                            <i class="fas fa-clock fa-2x mb-2 d-block"></i>
+                            No published results available yet.
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grading Scale Reference -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-gold text-dark">
+            <i class="fas fa-info-circle"></i> LASCOHET Grading Scale
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr><th>Score Range</th><th>Grade</th><th>Grade Point</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>70 - 100</td><td><span class="badge bg-success">A</span></td><td>4.0</td></tr>
+                            <tr><td>60 - 69</td><td><span class="badge bg-success">AB</span></td><td>3.5</td></tr>
+                            <tr><td>50 - 59</td><td><span class="badge bg-primary">B</span></td><td>3.0</td></tr>
+                            <tr><td>45 - 49</td><td><span class="badge bg-primary">BC</span></td><td>2.5</td></tr>
+                            <tr><td>40 - 44</td><td><span class="badge bg-warning text-dark">C</span></td><td>2.0</td></tr>
+                            <tr><td>35 - 39</td><td><span class="badge bg-warning text-dark">CD</span></td><td>1.5</td></tr>
+                            <tr><td>30 - 34</td><td><span class="badge bg-secondary">D</span></td><td>1.0</td></tr>
+                            <tr><td>0 - 29</td><td><span class="badge bg-danger">F</span></td><td>0.0</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr><th>GPA Range</th><th>Academic Standing</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>3.50 - 4.00</td><td><span class="badge bg-success">Distinction</span></td></tr>
+                            <tr><td>3.00 - 3.49</td><td><span class="badge bg-primary">Upper Credit</span></td></tr>
+                            <tr><td>2.50 - 2.99</td><td><span class="badge bg-info">Lower Credit</span></td></tr>
+                            <tr><td>2.00 - 2.49</td><td><span class="badge bg-warning text-dark">Pass</span></td></tr>
+                            <tr><td>Below 2.00</td><td><span class="badge bg-danger">Fail</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

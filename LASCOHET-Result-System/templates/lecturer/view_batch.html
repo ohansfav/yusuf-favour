@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}View Batch - {{ batch.course.code }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('lecturer.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">View Batch</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-lascohet-green text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">{{ batch.course.code }} - {{ batch.course.title }}</h5>
+                <small>{{ batch.academic_session }} | {{ batch.semester }} Semester</small>
+            </div>
+            <span class="badge bg-{{ 'secondary' if batch.status == 'DRAFT' else 'info' if batch.status == 'SUBMITTED' else 'primary' if batch.status == 'HOD_APPROVED' else 'success' if batch.status == 'REGISTRY_APPROVED' else 'danger' }} fs-6">
+                {{ batch.status.replace('_', ' ') }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            {% if batch.status == 'REJECTED' and batch.rejection_reason %}
+            <div class="alert alert-danger m-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Rejected:</strong> {{ batch.rejection_reason }}
+                <br><small>Rejected by {{ batch.rejected_by.full_name if batch.rejected_by else 'Unknown' }} on {{ batch.rejected_at.strftime('%d %b %Y %H:%M') if batch.rejected_at else '' }}</small>
+            </div>
+            {% endif %}
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Matric No.</th>
+                            <th>Student Name</th>
+                            <th>CA (40)</th>
+                            <th>Exam (60)</th>
+                            <th>Total (100)</th>
+                            <th>Grade</th>
+                            <th>Grade Point</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="{{ 'table-danger' if result.grade == 'F' else '' }}">
+                            <td>{{ loop.index }}</td>
+                            <td><code>{{ result.student_profile.matric_number }}</code></td>
+                            <td>{{ result.student_profile.user.full_name }}</td>
+                            <td>{{ result.ca_score }}</td>
+                            <td>{{ result.exam_score }}</td>
+                            <td><strong>{{ result.total_score }}</strong></td>
+                            <td><span class="badge bg-{{ 'success' if result.grade in ('A', 'AB') else 'primary' if result.grade in ('B', 'BC') else 'warning text-dark' if result.grade in ('C', 'CD') else 'secondary' if result.grade == 'D' else 'danger' }}">{{ result.grade }}</span></td>
+                            <td>{{ result.grade_point }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="8" class="text-center text-muted">No results in this batch</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <span class="text-muted small">{{ results|length }} student(s)</span>
+            {% if batch.status == 'DRAFT' %}
+            <form method="POST" action="{{ url_for('lecturer.submit_batch', batch_id=batch.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Submit for HOD approval?')">
+                    <i class="fas fa-paper-plane"></i> Submit for Approval
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
